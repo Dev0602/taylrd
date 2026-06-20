@@ -1,0 +1,598 @@
+{% extends "base.html" %}
+{% block title %}Taylrd — Results{% endblock %}
+{% block step1_class %}done{% endblock %}
+{% block step2_class %}done{% endblock %}
+{% block step3_class %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+.results-page{padding:40px 24px 100px;max-width:1400px;margin:0 auto}
+.page-label{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:12px}
+.page-title{font-size:clamp(28px,3vw,42px);font-weight:900;letter-spacing:-1.5px;margin-bottom:6px;color:#fff}
+.page-sub{font-size:15px;color:#666;margin-bottom:32px;line-height:1.5}
+
+.rw-grid{display:grid;grid-template-columns:240px 1fr 460px;gap:20px;align-items:start;}
+@media(max-width:1200px){.rw-grid{grid-template-columns:220px 1fr}.rw-preview{grid-column:span 2}}
+@media(max-width:900px){.rw-grid{grid-template-columns:1fr}}
+
+/* Sidebar */
+.rw-side{background:#111;border:1px solid #1f1f1f;border-radius:14px;padding:24px 20px;position:sticky;top:20px;}
+.rw-score-wrap{text-align:center;margin-bottom:24px;}
+.rw-score-circle{position:relative;width:160px;height:160px;margin:0 auto 12px}
+.rw-score-num{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:48px;font-weight:900;color:#fff;letter-spacing:-2px;line-height:1}
+.rw-score-lbl{font-size:11px;font-weight:700;color:#666;letter-spacing:2px;text-transform:uppercase}
+.rw-potential{display:inline-block;margin-top:10px;padding:6px 14px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:#22c55e;font-size:12px;font-weight:700;border-radius:100px;letter-spacing:1px}
+.rw-improvement{font-size:13px;color:#22c55e;font-weight:600;margin-top:8px}
+.rw-side-section{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#444;margin:20px 0 10px;}
+.rw-side-item{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;margin-bottom:4px;border-radius:8px;}
+.rw-side-name{font-size:13px;color:#bbb;font-weight:500}
+.rw-side-count{font-size:11px;font-weight:700;color:#991b1b;background:rgba(153,27,27,0.1);padding:2px 8px;border-radius:100px;min-width:24px;text-align:center}
+.rw-side-count.green{color:#22c55e;background:rgba(34,197,94,0.1)}
+
+/* Main column */
+.rw-main{display:flex;flex-direction:column;gap:20px}
+.rw-banner{background:linear-gradient(135deg,#1a0808,#0d0d0d);border:1px solid #3d1515;border-radius:14px;padding:24px 28px;}
+.rw-b-title{font-size:18px;font-weight:800;margin-bottom:6px;color:#fff;display:flex;align-items:center;gap:10px;}
+.rw-b-sub{font-size:13px;color:#888;margin-bottom:16px}
+
+/* Issue cards */
+.rw-issue{background:#111;border:1px solid #1f1f1f;border-radius:12px;padding:18px 20px;display:flex;align-items:flex-start;gap:14px;transition:all 0.15s;}
+.rw-issue:hover{border-color:#3d1515}
+.rw-issue.high{border-left:3px solid #ef4444}
+.rw-issue.medium{border-left:3px solid #f59e0b}
+.rw-issue.low{border-left:3px solid #6b7280}
+.rw-issue-icon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;margin-top:2px;font-size:13px}
+.rw-issue.high .rw-issue-icon{background:rgba(239,68,68,0.15);color:#ef4444}
+.rw-issue.medium .rw-issue-icon{background:rgba(245,158,11,0.15);color:#f59e0b}
+.rw-issue.low .rw-issue-icon{background:rgba(107,114,128,0.15);color:#6b7280}
+.rw-issue-content{flex:1;min-width:0}
+.rw-issue-cat{font-size:10px;font-weight:800;color:#666;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}
+.rw-issue-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.4}
+.rw-issue-fix{font-size:13px;color:#888;line-height:1.5}
+.rw-issue-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:flex-end;}
+.rw-impact-tag{font-size:9px;font-weight:800;color:#888;letter-spacing:1.5px;text-transform:uppercase}
+.rw-fix-btn{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:7px 14px;background:#991b1b;color:#fff;border:none;border-radius:6px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;}
+.rw-fix-btn:hover{background:#b91c1c;transform:translateY(-1px)}
+.rw-fix-btn:disabled{opacity:0.4;cursor:not-allowed;background:#333}
+.rw-fix-btn.loading{background:#1f1f1f;color:#888}
+
+/* Completed */
+.rw-completed-section{background:#0d0d0d;border:1px solid #181818;border-radius:12px;padding:20px 24px;}
+.rw-completed-title{font-size:13px;font-weight:700;color:#22c55e;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.rw-completed-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.rw-completed-item{display:flex;align-items:center;gap:8px;font-size:13px;color:#888;padding:5px 0}
+.rw-completed-item span{color:#22c55e;font-weight:700;font-size:11px}
+
+/* Breakdown */
+.rw-breakdown{background:#111;border:1px solid #1f1f1f;border-radius:12px;padding:22px 24px;}
+.rw-breakdown-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:18px}
+.rw-bd-item{margin-bottom:14px}
+.rw-bd-item:last-child{margin-bottom:0}
+.rw-bd-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px}
+.rw-bd-name{color:#aaa;font-weight:500}
+.rw-bd-pts{color:#fff;font-weight:700;font-size:12px}
+.rw-bd-bar{height:6px;background:#1f1f1f;border-radius:3px;overflow:hidden}
+.rw-bd-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#991b1b,#b91c1c);transition:width 1s ease;}
+
+/* Preview Panel */
+.rw-preview{background:#111;border:1px solid #1f1f1f;border-radius:14px;overflow:hidden;position:sticky;top:20px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;}
+.rw-preview-tabs{display:flex;background:#0d0d0d;border-bottom:1px solid #1f1f1f}
+.rw-tab{flex:1;padding:14px;background:transparent;color:#666;border:none;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.15s;position:relative}
+.rw-tab.active{color:#fff;background:#111}
+.rw-tab.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:#991b1b}
+.rw-preview-body{padding:24px;font-size:12.5px;line-height:1.75;color:#ddd;overflow-y:auto;white-space:pre-wrap;font-family:'SF Mono','Monaco','Consolas',monospace;flex:1;}
+.rw-preview-edit{padding:24px;flex:1;display:flex;flex-direction:column}
+.rw-preview-edit textarea{width:100%;flex:1;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:8px;color:#ddd;padding:14px;font-size:12.5px;line-height:1.7;font-family:'SF Mono','Monaco','Consolas',monospace;resize:none;outline:none;}
+.rw-preview-edit textarea:focus{border-color:#3d1515}
+.rw-edit-actions{display:flex;gap:8px;margin-top:12px}
+.rw-edit-btn{flex:1;padding:11px;background:#991b1b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s}
+.rw-edit-btn:hover{background:#b91c1c}
+.rw-edit-btn.secondary{background:#1f1f1f;color:#aaa}
+.rw-edit-btn.secondary:hover{background:#2a2a2a;color:#fff}
+
+.rw-kw-bar{padding:14px 20px;background:#0d0d0d;border-bottom:1px solid #1f1f1f;display:flex;gap:6px;flex-wrap:wrap;max-height:90px;overflow-y:auto}
+.rw-kw-chip{font-size:11px;padding:3px 9px;border-radius:100px;font-weight:600}
+.rw-kw-chip.matched{background:rgba(34,197,94,0.1);color:#4ade80;border:1px solid rgba(34,197,94,0.2)}
+.rw-kw-chip.missing{background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
+
+.rw-next{display:block;width:100%;padding:18px;background:linear-gradient(135deg,#991b1b,#b91c1c);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;text-align:center;text-decoration:none;letter-spacing:0.5px;transition:all 0.2s;margin-top:20px}
+.rw-next:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(153,27,27,0.4)}
+
+.rw-section-h{font-size:18px;font-weight:800;color:#fff;margin-bottom:6px;letter-spacing:-0.3px}
+.rw-section-sub{font-size:13px;color:#666;margin-bottom:14px;line-height:1.5}
+
+/* ═══ MODAL ═══ */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:1000;padding:24px;}
+.modal-overlay.active{display:flex}
+.modal-box{background:#0d0d0d;border:1px solid #2a2a2a;border-radius:16px;width:100%;max-width:900px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;animation:modalIn 0.25s ease;}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.modal-header{padding:24px 28px;border-bottom:1px solid #1f1f1f;display:flex;justify-content:space-between;align-items:start;gap:20px;}
+.modal-title{font-size:20px;font-weight:800;color:#fff;margin-bottom:6px;letter-spacing:-0.3px}
+.modal-sub{font-size:13px;color:#888;line-height:1.5}
+.modal-close{background:transparent;color:#666;border:1px solid #2a2a2a;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.modal-close:hover{color:#fff;border-color:#3d1515}
+.modal-body{padding:24px 28px;overflow-y:auto;flex:1;}
+.modal-loading{padding:60px 20px;text-align:center;color:#888;}
+.modal-loading-spinner{display:inline-block;width:40px;height:40px;border:3px solid #1f1f1f;border-top-color:#991b1b;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Suggestion cards */
+.sg-card{background:#111;border:2px solid #1f1f1f;border-radius:12px;padding:20px 24px;margin-bottom:14px;cursor:pointer;transition:all 0.2s;position:relative;}
+.sg-card:hover{border-color:#3d1515;transform:translateY(-1px)}
+.sg-card.selected{border-color:#991b1b;background:#1a0808}
+.sg-card-head{display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;gap:12px;}
+.sg-card-title{font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;}
+.sg-card-title .label{font-size:10px;padding:3px 8px;border-radius:4px;font-weight:800;letter-spacing:1px;text-transform:uppercase;}
+.sg-card.opt1 .label{background:rgba(34,197,94,0.15);color:#22c55e}
+.sg-card.opt2 .label{background:rgba(245,158,11,0.15);color:#f59e0b}
+.sg-card.opt3 .label{background:rgba(239,68,68,0.15);color:#ef4444}
+.sg-card-score{display:flex;flex-direction:column;align-items:end}
+.sg-card-score-lbl{font-size:9px;letter-spacing:1.5px;color:#666;font-weight:700;text-transform:uppercase}
+.sg-card-score-val{font-size:24px;font-weight:900;color:#22c55e;letter-spacing:-1px;line-height:1}
+.sg-card-desc{font-size:13px;color:#aaa;line-height:1.6;margin-bottom:12px}
+.sg-card-preview{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:12px 14px;font-size:11.5px;color:#888;font-family:'SF Mono','Monaco',monospace;max-height:120px;overflow:hidden;position:relative;line-height:1.6;white-space:pre-wrap;}
+.sg-card-preview::after{content:'';position:absolute;bottom:0;left:0;right:0;height:30px;background:linear-gradient(transparent,#0a0a0a)}
+.sg-card-apply{margin-top:14px;width:100%;padding:11px;background:#991b1b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;display:none}
+.sg-card-apply:hover{background:#b91c1c}
+.sg-card.selected .sg-card-apply{display:block}
+
+.modal-footer{padding:16px 28px;border-top:1px solid #1f1f1f;display:flex;justify-content:space-between;align-items:center;background:#0a0a0a}
+.modal-footer-info{font-size:12px;color:#666}
+.modal-footer-btn{padding:10px 20px;background:#1f1f1f;color:#aaa;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.modal-footer-btn:hover{background:#2a2a2a;color:#fff}
+
+@media(max-width:900px){
+  .rw-side,.rw-preview{position:static;max-height:none}
+  .rw-completed-grid{grid-template-columns:1fr}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="results-page">
+  <div class="page-label">Step 03 — Results</div>
+  <h1 class="page-title">Your ATS Report</h1>
+  <p class="page-sub">Click any FIX button to get 3 AI-powered suggestions and instantly improve your score.</p>
+
+  <div class="rw-grid">
+
+    <!-- ════ LEFT SIDEBAR ════ -->
+    <aside class="rw-side">
+      <div class="rw-score-wrap">
+        <div class="rw-score-circle">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="68" fill="none" stroke="#1f1f1f" stroke-width="11"/>
+            <circle id="mainScoreRing" cx="80" cy="80" r="68" fill="none"
+                    stroke="#991b1b" stroke-width="11" stroke-linecap="round"
+                    stroke-dasharray="427.3" stroke-dashoffset="427.3"
+                    transform="rotate(-90 80 80)"
+                    style="transition:stroke-dashoffset 1.5s ease"/>
+          </svg>
+          <div class="rw-score-num" id="mainScore">—</div>
+        </div>
+        <div class="rw-score-lbl">Overall Score</div>
+        <div class="rw-improvement" id="scoreImprovement"></div>
+        <div class="rw-potential" id="potential">Potential: 90+</div>
+      </div>
+
+      <div class="rw-side-section">Top Fixes</div>
+      <div id="sideTopFixes"></div>
+
+      <div class="rw-side-section">Completed</div>
+      <div id="sideCompleted"></div>
+    </aside>
+
+    <!-- ════ CENTER COLUMN ════ -->
+    <main class="rw-main">
+      <div class="rw-banner">
+        <div class="rw-b-title">
+          <span style="color:#22c55e">↑</span>
+          <span id="bannerImp">Score boosted by — %</span>
+        </div>
+        <div class="rw-b-sub">Click <strong style="color:#991b1b">FIX</strong> on any issue to see 3 AI suggestions and apply with one click.</div>
+      </div>
+
+      <section id="issuesSection">
+        <div class="rw-section-h">Steps to increase your score</div>
+        <div class="rw-section-sub">Each fix runs through Claude AI to generate 3 tailored options.</div>
+        <div id="issuesList" style="display:flex;flex-direction:column;gap:10px"></div>
+      </section>
+
+      <div class="rw-breakdown">
+        <div class="rw-breakdown-title">Score Breakdown</div>
+        <div id="breakdownBars"></div>
+      </div>
+
+      <div class="rw-completed-section">
+        <div class="rw-completed-title">✓ What you did well</div>
+        <div class="rw-completed-grid" id="completedGrid"></div>
+      </div>
+
+      <a href="/download" class="rw-next">Choose Template & Download PDF →</a>
+    </main>
+
+    <!-- ════ RIGHT PREVIEW PANEL ════ -->
+    <aside class="rw-preview">
+      <div class="rw-preview-tabs">
+        <button class="rw-tab active" id="tabResume" onclick="switchTab('resume')">Resume</button>
+        <button class="rw-tab" id="tabCover" onclick="switchTab('cover')">Cover Letter</button>
+        <button class="rw-tab" id="tabEdit" onclick="switchTab('edit')">Edit & Re-score</button>
+      </div>
+      <div class="rw-kw-bar" id="kwBar"></div>
+      <div class="rw-preview-body" id="resumeView"></div>
+      <div class="rw-preview-body" id="coverView" style="display:none"></div>
+      <div class="rw-preview-edit" id="editView" style="display:none">
+        <textarea id="editTextarea" placeholder="Edit your resume here..."></textarea>
+        <div class="rw-edit-actions">
+          <button class="rw-edit-btn secondary" onclick="resetEdit()">Reset</button>
+          <button class="rw-edit-btn" id="rescoreBtn" onclick="reScore()">Re-score Resume</button>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<!-- ═══════ FIX SUGGESTIONS MODAL ═══════ -->
+<div class="modal-overlay" id="fixModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">AI Fix Suggestions</div>
+        <div class="modal-sub" id="modalSub">Pick the option that works best for you.</div>
+      </div>
+      <button class="modal-close" onclick="closeFixModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <div class="modal-loading">
+        <div class="modal-loading-spinner"></div>
+        <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:6px">Generating AI suggestions...</div>
+        <div style="font-size:12px;color:#666">Claude is analyzing your resume and creating 3 tailored fixes.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-footer-info">💡 Click a card to select, then click "Apply this fix"</div>
+      <button class="modal-footer-btn" onclick="closeFixModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CIRC = 427.3;
+let currentData = null;
+let originalResume = '';
+let currentSuggestions = [];
+let selectedSuggestion = null;
+
+const CATEGORY_LABELS = {
+  keyword_match: 'Keyword Match',
+  content_quality: 'Content Quality',
+  formatting: 'Formatting',
+  contact_info: 'Contact Info',
+  job_fit: 'Job Fit'
+};
+const CATEGORY_MAX = {
+  keyword_match: 50,
+  content_quality: 25,
+  formatting: 15,
+  contact_info: 5,
+  job_fit: 5
+};
+
+function animMainScore(score) {
+  const ring = document.getElementById('mainScoreRing');
+  ring.style.strokeDashoffset = CIRC - (CIRC * (score / 100));
+  ring.style.stroke = score >= 80 ? '#22c55e' : score >= 60 ? '#991b1b' : '#f59e0b';
+  const num = document.getElementById('mainScore');
+  let curr = 0;
+  const step = Math.max(1, Math.floor(score / 30));
+  const interval = setInterval(() => {
+    curr = Math.min(curr + step, score);
+    num.textContent = curr;
+    if (curr >= score) clearInterval(interval);
+  }, 40);
+}
+
+function renderSidebar(d) {
+  const issueCounts = {};
+  (d.issues || []).forEach(i => issueCounts[i.category] = (issueCounts[i.category] || 0) + 1);
+  document.getElementById('sideTopFixes').innerHTML =
+    Object.entries(issueCounts).map(([cat, count]) =>
+      `<div class="rw-side-item"><span class="rw-side-name">${cat}</span><span class="rw-side-count">${count}</span></div>`
+    ).join('') || '<div style="font-size:12px;color:#444;padding:10px 12px">No issues 🎉</div>';
+
+  const compCounts = {};
+  (d.completed || []).forEach(c => compCounts[c.category] = (compCounts[c.category] || 0) + 1);
+  document.getElementById('sideCompleted').innerHTML =
+    Object.entries(compCounts).map(([cat, count]) =>
+      `<div class="rw-side-item"><span class="rw-side-name">${cat}</span><span class="rw-side-count green">${count}</span></div>`
+    ).join('') || '<div style="font-size:12px;color:#444;padding:10px 12px">—</div>';
+}
+
+function renderIssues(issues) {
+  const el = document.getElementById('issuesList');
+  if (!issues || issues.length === 0) {
+    el.innerHTML = '<div style="padding:30px;text-align:center;color:#555;background:#111;border:1px solid #1f1f1f;border-radius:12px">🎉 No major issues! Your resume looks great.</div>';
+    return;
+  }
+  el.innerHTML = issues.map((i, idx) => {
+    const icon = i.impact === 'high' ? '!' : i.impact === 'medium' ? '!' : 'i';
+    return `
+      <div class="rw-issue ${i.impact}" id="issue${idx}">
+        <div class="rw-issue-icon">${icon}</div>
+        <div class="rw-issue-content">
+          <div class="rw-issue-cat">${i.category}</div>
+          <div class="rw-issue-title">${i.issue}</div>
+          <div class="rw-issue-fix">💡 ${i.fix}</div>
+        </div>
+        <div class="rw-issue-actions">
+          <span class="rw-impact-tag">${i.impact === 'high' ? '🔴' : i.impact === 'medium' ? '🟠' : '⚪'} ${i.impact}</span>
+          <button class="rw-fix-btn" id="fixBtn${idx}" onclick="openFixModal(${idx})">Fix →</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCompleted(completed) {
+  const el = document.getElementById('completedGrid');
+  if (!completed || completed.length === 0) {
+    el.innerHTML = '<div style="grid-column:1/-1;color:#555;font-size:13px">No checks completed.</div>';
+    return;
+  }
+  el.innerHTML = completed.map(c =>
+    `<div class="rw-completed-item">✓ ${c.check} <span>+${c.points} pts</span></div>`
+  ).join('');
+}
+
+function renderBreakdown(b) {
+  document.getElementById('breakdownBars').innerHTML = Object.entries(b).map(([key, val]) => {
+    const max = CATEGORY_MAX[key] || 10;
+    const pct = Math.round((val / max) * 100);
+    return `
+      <div class="rw-bd-item">
+        <div class="rw-bd-row">
+          <span class="rw-bd-name">${CATEGORY_LABELS[key] || key}</span>
+          <span class="rw-bd-pts">${val}/${max} pts</span>
+        </div>
+        <div class="rw-bd-bar"><div class="rw-bd-fill" style="width:0%" data-w="${pct}%"></div></div>
+      </div>
+    `;
+  }).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.rw-bd-fill').forEach(b => b.style.width = b.dataset.w);
+  }, 200);
+}
+
+function renderKeywords(matched, missing) {
+  const matchChips = (matched || []).map(k => `<span class="rw-kw-chip matched">✓ ${k}</span>`).join('');
+  const missChips = (missing || []).map(k => `<span class="rw-kw-chip missing">+ ${k}</span>`).join('');
+  document.getElementById('kwBar').innerHTML = matchChips + missChips;
+}
+
+function switchTab(tab) {
+  ['resume', 'cover', 'edit'].forEach(t => {
+    const view = document.getElementById(t + 'View');
+    const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (view) view.style.display = (t === tab) ? (t === 'edit' ? 'flex' : 'block') : 'none';
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'edit') {
+    document.getElementById('editTextarea').value = currentData.tailored_resume;
+  }
+}
+
+function resetEdit() {
+  document.getElementById('editTextarea').value = originalResume;
+}
+
+async function reScore() {
+  const newResume = document.getElementById('editTextarea').value.trim();
+  if (!newResume) { alert('Resume cannot be empty.'); return; }
+
+  const btn = document.getElementById('rescoreBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Re-scoring...';
+
+  try {
+    const res = await fetch('/rescore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resume_text: newResume,
+        job_description: currentData.job_description || ''
+      })
+    });
+    if (!res.ok) throw new Error('Re-score failed');
+    const result = await res.json();
+
+    currentData.tailored_resume = newResume;
+    currentData.ats_score_after = result.score;
+    currentData.matched_keywords = result.matched_keywords;
+    currentData.missing_keywords = result.missing_keywords;
+    currentData.issues = result.issues;
+    currentData.completed = result.completed;
+    currentData.breakdown = result.breakdown;
+
+    sessionStorage.setItem('tailorResult', JSON.stringify(currentData));
+    renderAll(currentData);
+    showToast('✓ Re-scored! Your new score is ' + result.score + '%');
+  } catch (e) {
+    alert('Re-score failed. Try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Re-score Resume';
+  }
+}
+
+// ═══════ FIX MODAL LOGIC ═══════
+async function openFixModal(issueIdx) {
+  const issue = currentData.issues[issueIdx];
+  if (!issue) return;
+
+  selectedSuggestion = null;
+  currentSuggestions = [];
+
+  document.getElementById('modalTitle').textContent = issue.issue;
+  document.getElementById('modalSub').textContent = '💡 ' + issue.fix;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-loading">
+      <div class="modal-loading-spinner"></div>
+      <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:6px">Generating AI suggestions...</div>
+      <div style="font-size:12px;color:#666">Claude is analyzing your resume and creating 3 tailored fixes.</div>
+    </div>
+  `;
+
+  document.getElementById('fixModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  // Mark fix button as loading
+  const btn = document.getElementById('fixBtn' + issueIdx);
+  if (btn) { btn.classList.add('loading'); btn.textContent = '⏳ AI...'; }
+
+  try {
+    const res = await fetch('/get-fix-suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resume_text: currentData.tailored_resume,
+        issue: issue,
+        job_description: currentData.job_description || ''
+      })
+    });
+
+    if (!res.ok) throw new Error('Failed');
+    const result = await res.json();
+    currentSuggestions = result.suggestions || [];
+    renderSuggestions(currentSuggestions);
+
+  } catch (e) {
+    document.getElementById('modalBody').innerHTML = `
+      <div style="text-align:center;padding:40px 20px;color:#ef4444">
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px">Failed to generate suggestions</div>
+        <div style="font-size:12px;color:#666">Please try again in a moment.</div>
+      </div>
+    `;
+  } finally {
+    if (btn) { btn.classList.remove('loading'); btn.textContent = 'Fix →'; }
+  }
+}
+
+function renderSuggestions(suggestions) {
+  if (!suggestions || suggestions.length === 0) {
+    document.getElementById('modalBody').innerHTML = '<div style="text-align:center;padding:40px;color:#666">No suggestions generated. Try again.</div>';
+    return;
+  }
+  document.getElementById('modalBody').innerHTML = suggestions.map((s, idx) => {
+    const preview = (s.modified_resume || '').slice(0, 400);
+    const score = s.new_score !== undefined ? s.new_score : '—';
+    return `
+      <div class="sg-card opt${idx+1}" id="sgCard${idx}" onclick="selectSuggestion(${idx})">
+        <div class="sg-card-head">
+          <div class="sg-card-title">
+            <span class="label">Option ${idx+1}</span>
+            <span>${s.title || 'Suggestion'}</span>
+          </div>
+          <div class="sg-card-score">
+            <div class="sg-card-score-lbl">New Score</div>
+            <div class="sg-card-score-val">${score}%</div>
+          </div>
+        </div>
+        <div class="sg-card-desc">${s.description || ''}</div>
+        <div class="sg-card-preview">${preview.replace(/</g,'&lt;')}${preview.length >= 400 ? '...' : ''}</div>
+        <button class="sg-card-apply" onclick="event.stopPropagation();applySuggestion(${idx})">
+          ✓ Apply this fix
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectSuggestion(idx) {
+  selectedSuggestion = idx;
+  document.querySelectorAll('.sg-card').forEach((c, i) => c.classList.toggle('selected', i === idx));
+}
+
+async function applySuggestion(idx) {
+  const s = currentSuggestions[idx];
+  if (!s || !s.modified_resume) return;
+
+  // Update current data
+  currentData.tailored_resume = s.modified_resume;
+
+  // Re-score to get fresh data
+  try {
+    const res = await fetch('/rescore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resume_text: s.modified_resume,
+        job_description: currentData.job_description || ''
+      })
+    });
+    const result = await res.json();
+
+    currentData.ats_score_after = result.score;
+    currentData.matched_keywords = result.matched_keywords;
+    currentData.missing_keywords = result.missing_keywords;
+    currentData.issues = result.issues;
+    currentData.completed = result.completed;
+    currentData.breakdown = result.breakdown;
+
+    sessionStorage.setItem('tailorResult', JSON.stringify(currentData));
+    renderAll(currentData);
+    closeFixModal();
+    showToast(`✓ Applied! Score is now ${result.score}%`);
+  } catch (e) {
+    alert('Failed to apply fix. Try again.');
+  }
+}
+
+function closeFixModal() {
+  document.getElementById('fixModal').classList.remove('active');
+  document.body.style.overflow = '';
+  currentSuggestions = [];
+  selectedSuggestion = null;
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#22c55e;color:#000;padding:14px 28px;border-radius:100px;font-weight:700;font-size:14px;z-index:1100;box-shadow:0 10px 30px rgba(0,0,0,0.5);animation:toastIn 0.3s ease;';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; }, 2500);
+  setTimeout(() => toast.remove(), 2900);
+}
+
+function renderAll(d) {
+  const after = d.ats_score_after;
+  const imp = after - d.ats_score_before;
+  document.getElementById('scoreImprovement').textContent = (imp > 0 ? '↑ +' : '') + imp + '% from original';
+  document.getElementById('bannerImp').textContent = 'Score boosted by ' + (imp > 0 ? '+' : '') + imp + '%';
+  document.getElementById('potential').textContent = 'Potential: ' + Math.min(98, after + 12) + '+';
+  animMainScore(after);
+  renderSidebar(d);
+  renderIssues(d.issues || []);
+  renderCompleted(d.completed || []);
+  if (d.breakdown) renderBreakdown(d.breakdown);
+  renderKeywords(d.matched_keywords || [], d.missing_keywords || []);
+  document.getElementById('resumeView').textContent = d.tailored_resume;
+  document.getElementById('coverView').textContent = d.cover_letter;
+}
+
+// Close modal on overlay click
+document.getElementById('fixModal').addEventListener('click', (e) => {
+  if (e.target.id === 'fixModal') closeFixModal();
+});
+
+window.addEventListener('load', function () {
+  const raw = sessionStorage.getItem('tailorResult');
+  if (!raw) { window.location.href = '/'; return; }
+  currentData = JSON.parse(raw);
+  originalResume = currentData.tailored_resume;
+  renderAll(currentData);
+});
+</script>
+{% endblock %}

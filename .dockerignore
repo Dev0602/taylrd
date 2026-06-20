@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Environment files (NEVER include in image)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Test files
+test_resume.pdf
+*.test.pdf
+
+# Documentation
+README.md
+*.md
+
+# Logs
+*.log
+logs/
+
+# PDF outputs (generated, not source)
+output/
+generated/

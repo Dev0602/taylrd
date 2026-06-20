@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Taylrd — Download{% endblock %}
+{% block step1_class %}done{% endblock %}
+{% block step2_class %}done{% endblock %}
+{% block step3_class %}done{% endblock %}
+{% block step4_class %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+.download-page{padding:60px 48px 100px;max-width:1100px;margin:0 auto}
+.page-label{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:12px}
+.page-title{font-size:clamp(32px,4vw,52px);font-weight:900;letter-spacing:-2px;margin-bottom:8px;color:#fff}
+.page-sub{font-size:16px;color:#666;margin-bottom:44px;line-height:1.6}
+
+.score-summary{display:flex;align-items:center;gap:12px;background:#1a0808;border:1px solid #3d1515;border-radius:12px;padding:16px 24px;margin-bottom:36px;}
+.ss-label{font-size:13px;color:#888}
+.ss-score{font-size:28px;font-weight:900;color:#991b1b;letter-spacing:-1px}
+.ss-arrow{font-size:18px;color:#444}
+.ss-imp{font-size:13px;color:#22c55e;font-weight:600}
+
+.tmpl{background:#111;border:1px solid #1f1f1f;border-radius:14px;overflow:hidden;margin-bottom:20px}
+.tmpl-head{padding:18px 24px;border-bottom:1px solid #181818;}
+.tmpl-head-title{font-size:15px;font-weight:800;color:#fff;margin-bottom:4px}
+.tmpl-head-sub{font-size:12px;color:#555}
+.tmpl-body{padding:24px}
+
+.t-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+@media(max-width:768px){.t-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.t-grid{grid-template-columns:1fr}}
+
+.tc{border:1.5px solid #1f1f1f;border-radius:10px;padding:16px;cursor:pointer;transition:all 0.15s;position:relative}
+.tc:hover{border-color:#3d1515}
+.tc.on{border-color:#991b1b;background:#1a0808}
+
+.tc-thumb{height:90px;background:#0d0d0d;border-radius:6px;margin-bottom:12px;padding:10px;border:1px solid #1a1a1a;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.mini{width:100%}
+.ml{height:2px;border-radius:1px;margin-bottom:3px;background:#2a2a2a}
+.ml.hk{height:3px;background:#fff;width:55%;margin:0 auto 5px}
+.ml.s{width:35%}.ml.m{width:65%}.ml.f{width:90%}
+.mdv{height:1px;background:#2a2a2a;margin:4px 0}
+
+.tc-name{font-size:15px;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:-0.3px}
+.tc-desc{font-size:11px;color:#666;line-height:1.5}
+.tc-selected{font-size:10px;font-weight:700;color:#991b1b;letter-spacing:1px;text-transform:uppercase;margin-top:8px;display:none}
+.tc.on .tc-selected{display:block}
+
+.dl-section{display:flex;flex-direction:column;gap:10px}
+.dl-p{width:100%;padding:17px;background:#991b1b;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.dl-p:hover{background:#b91c1c;transform:translateY(-1px)}
+.dl-p:disabled{opacity:0.35;cursor:not-allowed;transform:none}
+.dl-s{width:100%;padding:15px;background:transparent;color:#888;border:1.5px solid #222;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.dl-s:hover{color:#fff;border-color:#555}
+.dl-s:disabled{opacity:0.35;cursor:not-allowed}
+
+.start-over{text-align:center;padding:32px;border-top:1px solid #1a1a1a;margin-top:20px;}
+.start-over p{font-size:14px;color:#555;margin-bottom:16px}
+.start-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:transparent;color:#888;border:1px solid #222;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;transition:all 0.15s;}
+.start-btn:hover{color:#fff;border-color:#555}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="download-page">
+  <div class="page-label">Step 04 — Download</div>
+  <h1 class="page-title">Choose your template.</h1>
+  <p class="page-sub">Pick from 3 professional templates. Download your resume and cover letter as PDF.</p>
+
+  <div class="score-summary" id="scoreSummary" style="display:none">
+    <div class="ss-label">ATS Score:</div>
+    <div class="ss-score" id="ssBefore">—</div>
+    <div class="ss-arrow">→</div>
+    <div class="ss-score" id="ssAfter">—</div>
+    <div class="ss-imp" id="ssImp"></div>
+  </div>
+
+  <div class="tmpl">
+    <div class="tmpl-head">
+      <div class="tmpl-head-title">Select PDF Template</div>
+      <div class="tmpl-head-sub">All templates are ATS-optimized</div>
+    </div>
+    <div class="tmpl-body">
+      <div class="t-grid">
+
+        <!-- Template 1 -->
+        <div class="tc on" id="t1" onclick="pt(1)">
+          <div class="tc-thumb"><div class="mini">
+            <div class="ml hk"></div>
+            <div class="ml s" style="margin:0 auto 6px"></div>
+            <div class="mdv"></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <div class="ml m" style="margin:0"></div>
+              <div class="ml s" style="margin:0;width:25%"></div>
+            </div>
+            <div class="ml f" style="margin:0 0 3px 0"></div>
+            <div class="ml m" style="margin:0 0 3px 0"></div>
+            <div class="mdv"></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <div class="ml m" style="margin:0"></div>
+              <div class="ml s" style="margin:0;width:25%"></div>
+            </div>
+            <div class="ml f" style="margin:0 0 3px 0"></div>
+          </div></div>
+          <div class="tc-name">Template 1</div>
+          <div class="tc-desc">Charter font, clean section dividers with bold hrule, hfill dates</div>
+          <div class="tc-selected">✓ Selected</div>
+        </div>
+
+        <!-- Template 2 -->
+        <div class="tc" id="t2" onclick="pt(2)">
+          <div class="tc-thumb"><div class="mini">
+            <div class="ml hk"></div>
+            <div class="ml s" style="margin:0 auto 4px;width:80%"></div>
+            <div class="mdv" style="background:#666;height:1px"></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+              <div class="ml m" style="margin:0"></div>
+              <div class="ml s" style="margin:0;width:20%"></div>
+            </div>
+            <div class="ml f" style="margin:0 0 2px 8px"></div>
+            <div class="ml m" style="margin:0 0 2px 8px"></div>
+            <div class="mdv" style="background:#666;height:1px"></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+              <div class="ml m" style="margin:0"></div>
+              <div class="ml s" style="margin:0;width:20%"></div>
+            </div>
+            <div class="ml f" style="margin:0 0 2px 8px"></div>
+          </div></div>
+          <div class="tc-name">Template 2</div>
+          <div class="tc-desc">Small-caps section headers with titlerule, tabular subheadings</div>
+          <div class="tc-selected">✓ Selected</div>
+        </div>
+
+        <!-- Template 3 -->
+        <div class="tc" id="t3" onclick="pt(3)">
+          <div class="tc-thumb"><div class="mini">
+            <div class="ml hk"></div>
+            <div class="ml s" style="margin:0 auto 4px;width:80%"></div>
+            <div class="mdv" style="background:#666;height:1px"></div>
+            <div class="ml f" style="margin:0 0 1px 0"></div>
+            <div class="ml f" style="margin:0 0 1px 0"></div>
+            <div class="ml m" style="margin:0 0 3px 0"></div>
+            <div class="mdv" style="background:#666;height:1px"></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+              <div class="ml m" style="margin:0"></div>
+              <div class="ml s" style="margin:0;width:20%"></div>
+            </div>
+            <div class="ml f" style="margin:0 0 2px 8px"></div>
+          </div></div>
+          <div class="tc-name">Template 3</div>
+          <div class="tc-desc">Same as Template 2 but with a Summary section at the top</div>
+          <div class="tc-selected">✓ Selected</div>
+        </div>
+
+      </div>
+
+      <div class="dl-section">
+        <button class="dl-p" id="dlPdfBtn" onclick="dlPDF()">
+          ⬇ Download Resume PDF
+        </button>
+        <button class="dl-s" id="dlCoverBtn" onclick="dlCover()">
+          ⬇ Download Cover Letter PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="start-over">
+    <p>Want to tailor for a different job?</p>
+    <a href="/" class="start-btn">← Start over</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let tmpl = 1, rt = '', ct = '';
+
+window.addEventListener('load', function () {
+  const raw = sessionStorage.getItem('tailorResult');
+  if (!raw) { window.location.href = '/'; return; }
+  const d = JSON.parse(raw);
+  rt = d.tailored_resume;
+  ct = d.cover_letter;
+  const imp = d.ats_score_after - d.ats_score_before;
+  document.getElementById('ssBefore').textContent = d.ats_score_before + '%';
+  document.getElementById('ssAfter').textContent = d.ats_score_after + '%';
+  document.getElementById('ssImp').textContent = (imp > 0 ? '+' : '') + imp + '% improvement';
+  document.getElementById('scoreSummary').style.display = 'flex';
+});
+
+function pt(n) {
+  tmpl = n;
+  [1, 2, 3].forEach(i =>
+    document.getElementById('t' + i).classList.toggle('on', i === n)
+  );
+}
+
+async function dlPDF() {
+  const btn = document.getElementById('dlPdfBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating PDF...';
+  try {
+    const res = await fetch('/download-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resume_text: rt, template: tmpl })
+    });
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'tailored_resume.pdf';
+    a.click();
+  } catch (e) {
+    alert('PDF download failed. Please try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = '⬇ Download Resume PDF';
+}
+
+async function dlCover() {
+  const btn = document.getElementById('dlCoverBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating Cover Letter PDF...';
+  try {
+    const res = await fetch('/download-cover-letter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cover_letter: ct })
+    });
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'cover_letter.pdf';
+    a.click();
+  } catch (e) {
+    alert('Cover letter download failed. Please try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = '⬇ Download Cover Letter PDF';
+}
+</script>
+{% endblock %}
