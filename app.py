@@ -1,8 +1,9 @@
-"""Taylrd — AI Resume Tailor (Production)."""
+"""Taylrd — AI Resume Tailor (Production with CORS protection)."""
 
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_cors import CORS
 from dotenv import load_dotenv
 from datetime import datetime, date
 from threading import Lock
@@ -19,6 +20,28 @@ from pdf_generator import generate_pdf, generate_cover_letter_pdf
 load_dotenv()
 
 app = Flask(__name__)
+
+# ═══════════════════════════════════════════════════════════════
+# CORS — Only allow YOUR domain to call the API
+# ═══════════════════════════════════════════════════════════════
+ALLOWED_ORIGINS = [
+    "http://localhost:5001",
+    "http://localhost:5000",
+    "http://127.0.0.1:5001",
+    "http://127.0.0.1:5000",
+    # Add Render URL once deployed:
+    "https://taylrd.onrender.com",
+    "https://taylrd-app.onrender.com",
+]
+
+# Allow CORS only for API routes
+CORS(app,
+     resources={r"/tailor": {"origins": ALLOWED_ORIGINS},
+                r"/rescore": {"origins": ALLOWED_ORIGINS},
+                r"/get-fix-suggestions": {"origins": ALLOWED_ORIGINS},
+                r"/download-pdf": {"origins": ALLOWED_ORIGINS},
+                r"/download-cover-letter": {"origins": ALLOWED_ORIGINS}},
+     supports_credentials=True)
 
 # ── Production safety configuration ─────────────────────────────
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB max
@@ -39,11 +62,10 @@ limiter = Limiter(
 # DAILY GLOBAL CAP — Hard limit on total API calls per day
 # ═══════════════════════════════════════════════════════════════
 DAILY_LIMITS = {
-    'max_total_calls_per_day': 50,    # Total resumes generated app-wide per day
-    'max_fix_calls_per_day': 100,     # Total "Fix" button uses per day
+    'max_total_calls_per_day': 50,
+    'max_fix_calls_per_day': 100,
 }
 
-# In-memory counter (resets when server restarts — that's fine for free tier)
 _call_tracker = {
     'date': date.today(),
     'tailor_count': 0,
@@ -55,7 +77,6 @@ _call_tracker = {
 def _check_daily_limit(call_type='tailor'):
     """Returns True if under daily limit, False if exceeded."""
     with _call_tracker['lock']:
-        # Reset counter if it's a new day
         if _call_tracker['date'] != date.today():
             _call_tracker['date'] = date.today()
             _call_tracker['tailor_count'] = 0
@@ -104,13 +125,9 @@ def download_page():
     return render_template('download.html')
 
 
-# ═══════════════════════════════════════════════════════════════
-# Tailor route — STRICT LIMITS: 3 per day per person, 50/day total
-# ═══════════════════════════════════════════════════════════════
 @app.route('/tailor', methods=['POST'])
 @limiter.limit("3 per day; 1 per minute")
 def tailor():
-    # ── Check global daily cap first ─────────────────────────
     if not _check_daily_limit('tailor'):
         return jsonify({
             'error': 'Daily limit reached. We have a free tier limit of 50 resumes per day. Please try again tomorrow!'
@@ -172,9 +189,6 @@ def tailor():
         return jsonify({'error': 'Something went wrong. Please try again.'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════
-# Re-score (no AI call — free)
-# ═══════════════════════════════════════════════════════════════
 @app.route('/rescore', methods=['POST'])
 @limiter.limit("20 per minute")
 def rescore():
@@ -204,13 +218,9 @@ def rescore():
         return jsonify({'error': 'Re-scoring failed.'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════
-# Fix suggestions — STRICT: 5 per day per person, 100/day total
-# ═══════════════════════════════════════════════════════════════
 @app.route('/get-fix-suggestions', methods=['POST'])
 @limiter.limit("5 per day; 1 per minute")
 def get_fix_suggestions_route():
-    # ── Check global daily cap first ─────────────────────────
     if not _check_daily_limit('fix'):
         return jsonify({
             'error': 'Daily fix limit reached. Please try again tomorrow!'
@@ -246,9 +256,6 @@ def get_fix_suggestions_route():
         return jsonify({'error': 'Could not generate suggestions.'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════
-# PDF downloads (no AI cost — just LaTeX)
-# ═══════════════════════════════════════════════════════════════
 @app.route('/download-pdf', methods=['POST'])
 @limiter.limit("10 per minute")
 def download_pdf():
@@ -287,9 +294,6 @@ def download_cover_letter():
         return jsonify({'error': 'PDF generation failed.'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════
-# Health check (for Render monitoring)
-# ═══════════════════════════════════════════════════════════════
 @app.route('/health')
 def health():
     return jsonify({
@@ -301,11 +305,7 @@ def health():
     })
 
 
-# ═══════════════════════════════════════════════════════════════
-# Production-safe entry point (NO debug, NO auto-reload)
-# ═══════════════════════════════════════════════════════════════
 if __name__ == '__main__':
-    # Production: no debug mode, no auto-reload
     app.run(
         host='0.0.0.0',
         port=int(os.getenv('PORT', 5000)),
