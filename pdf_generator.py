@@ -1,4 +1,4 @@
-"""PDF generator — 3 templates. Summary section only in Template 3."""
+"""PDF generator — 3 templates. Template 1 updated with tighter Charter layout."""
 
 import subprocess
 import os
@@ -134,7 +134,6 @@ def parse_resume(resume_text):
 
 
 def _is_summary_section(section):
-    """Check if a section is a Summary/Objective section."""
     title_upper = section['title'].upper()
     return 'SUMMARY' in title_upper or 'OBJECTIVE' in title_upper or 'PROFILE' in title_upper
 
@@ -173,8 +172,12 @@ def _compile(latex):
 
 
 # ═══════════════════════════════════════════════════════════════════
-# TEMPLATE 1 — Charter font (Friend's template)
+# TEMPLATE 1 — NEW: Tighter Charter layout (your latest template)
 # 🚫 NO SUMMARY SECTION
+# Uses: \role{Company}{Title}{Dates}
+#       \edu{School}{Degree}{Dates}{Location}{Note}
+#       \sk{Category}{Skills}
+#       \proj{Title}{Tech}{Date}
 # ═══════════════════════════════════════════════════════════════════
 
 def _t1_contact_line(contact_list):
@@ -189,6 +192,15 @@ def _t1_contact_line(contact_list):
         else:
             parts.append(escape_latex(c))
     return '\n  \\enspace\\textbar\\enspace\n  '.join(parts)
+
+
+def _split_location_from_school(school_text):
+    """Split 'University Name, Location' into (name, location)."""
+    if ',' in school_text:
+        parts = school_text.rsplit(',', 1)
+        if len(parts) == 2 and len(parts[1].strip()) < 50:
+            return parts[0].strip(), parts[1].strip()
+    return school_text.strip(), ''
 
 
 def build_template1(data):
@@ -208,7 +220,12 @@ def build_template1(data):
 
         if 'EDUCATION' in sec_upper:
             for i, entry in enumerate(sec['entries']):
-                school = escape_latex(entry['header_left'])
+                # Parse "University, Location" → (name, location)
+                school_full = entry['header_left']
+                school, location = _split_location_from_school(school_full)
+                school_esc = escape_latex(school)
+                location_esc = escape_latex(location) if location else ''
+
                 date_  = escape_latex(entry['header_right'])
                 sub    = entry.get('sub', '')
 
@@ -227,10 +244,12 @@ def build_template1(data):
                         note_parts.append(escape_latex(nl))
                 note = ' '.join(note_parts) if note_parts else ''
 
+                # \edu{School}{Degree}{Dates}{Location}{Note}
                 body += (
-                    f"\\edu{{{school}}}\n"
+                    f"\\edu{{{school_esc}}}\n"
                     f"    {{{degree}}}\n"
                     f"    {{{date_}}}\n"
+                    f"    {{{location_esc}}}\n"
                     f"    {{{note}}}\n\n"
                 )
                 if i < len(sec['entries']) - 1:
@@ -289,11 +308,11 @@ def build_template1(data):
             body += "\\end{itemize}\n\n"
 
     return r"""%=============================================================
-%  Resume (Single Page, pdfLaTeX)
+%  Resume (Single Page, pdfLaTeX) - Template 1
 %=============================================================
 \documentclass[10.5pt, letterpaper]{article}
 
-\usepackage[top=0.42in, bottom=0.42in, left=0.55in, right=0.55in]{geometry}
+\usepackage[top=0.38in, bottom=0.38in, left=0.55in, right=0.55in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{charter}
@@ -305,54 +324,57 @@ def build_template1(data):
 \usepackage{xcolor}
 \usepackage{tabularx}
 
+%-- Section style --------------------------------------------
 \titleformat{\section}
   {\normalsize\bfseries\color{black}}
   {}{0em}{}
   [\vspace{1pt}{\color{black}\hrule height 0.8pt}\vspace{2pt}]
-\titlespacing*{\section}{0pt}{6pt}{3pt}
+\titlespacing*{\section}{0pt}{4pt}{2pt}
 
+%-- List style -----------------------------------------------
 \setlist[itemize]{
-  leftmargin=1.4em, itemsep=1.5pt, parsep=0pt, topsep=2pt,
-  label={\small\color{black}\textbullet}
+  leftmargin=1.4em, itemsep=0.5pt, parsep=0pt, topsep=1.5pt,
+  label={\color{black}\textbullet}
 }
 
+%-- Commands ------------------------------------------------
 \newcommand{\role}[3]{%
   \vspace{3pt}%
   \noindent
   \begin{tabularx}{\linewidth}{@{}l@{\extracolsep{\fill}}r@{}}
-    \textbf{#1} & \textbf{\small #3} \\[-2pt]
-    \textbf{\small #2} &
+    \textbf{#1} & \textbf{#3} \\[-2pt]
+    \textit{#2} &
   \end{tabularx}\vspace{1pt}%
 }
 
-\newcommand{\edu}[4]{%
+\newcommand{\edu}[5]{%
   \noindent
   \begin{tabularx}{\linewidth}{@{}l@{\extracolsep{\fill}}r@{}}
-    \textbf{#1} & \textbf{\small #3} \\[-2pt]
-    \textbf{\small #2} &
+    \textbf{#1} & \textbf{#4} \\[-2pt]
+    \textit{#2} & \textbf{#3}
   \end{tabularx}\par\vspace{1.5pt}%
-  {\small #4}\par%
+  {#5}\par%
 }
 
 \newcommand{\sk}[2]{%
-  \noindent\textbf{\small #1:}~{\small #2}\par\vspace{1.5pt}%
+  \noindent\textbf{#1:}~{#2}\par\vspace{1.5pt}%
 }
 
 \newcommand{\proj}[3]{%
   \vspace{3pt}%
   \noindent
   \begin{tabularx}{\linewidth}{@{}l@{\extracolsep{\fill}}r@{}}
-    \textbf{#1} \textnormal{\small $|$ \textit{#2}} & \textbf{\small #3}
+    \textbf{#1} \textnormal{$|$ \textit{#2}} & \textbf{#3}
   \end{tabularx}\par\vspace{1pt}%
 }
 
+%=============================================================
 \begin{document}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 
 \begin{center}
   {\Large\bfseries """ + name + r"""}\\[4pt]
-  \small
   """ + contact_line + r"""
 \end{center}
 \vspace{1pt}
@@ -362,7 +384,7 @@ def build_template1(data):
 
 
 # ═══════════════════════════════════════════════════════════════════
-# TEMPLATE 2 — Jake's Resume style (Pavan's template)
+# TEMPLATE 2 — Jake's Resume style (Pavan's template) — UNCHANGED
 # 🚫 NO SUMMARY SECTION
 # ═══════════════════════════════════════════════════════════════════
 
@@ -386,7 +408,6 @@ def build_template2(data):
 
     body = ''
     for sec in data['sections']:
-        # 🚫 SKIP Summary section for Template 2
         if _is_summary_section(sec):
             continue
 
@@ -490,7 +511,7 @@ def build_template2(data):
             body += "  \\resumeItemListEnd\n\\resumeSubHeadingListEnd\n\n"
 
     return r"""%-------------------------
-% Resume in Latex
+% Resume in Latex - Template 2
 %------------------------
 
 \documentclass[letterpaper,10pt]{article}
@@ -561,15 +582,14 @@ def build_template2(data):
 
 
 # ═══════════════════════════════════════════════════════════════════
-# TEMPLATE 3 — Jake's style + Summary section
-# ✅ SHOWS SUMMARY SECTION (always — auto-generates if AI didn't include one)
+# TEMPLATE 3 — Jake's style + Summary section — UNCHANGED
+# ✅ SHOWS SUMMARY SECTION
 # ═══════════════════════════════════════════════════════════════════
 
 def build_template3(data):
     name = escape_latex(data['name'])
     contact_line = _jake_contact_line(data['contact'])
 
-    # Find Summary section from AI output (if any)
     summary_text = ''
     other_sections = []
     for sec in data['sections']:
@@ -586,9 +606,7 @@ def build_template3(data):
         else:
             other_sections.append(sec)
 
-    # If no summary was generated by AI, build a basic one from existing sections
     if not summary_text:
-        # Find education and experience to build a default summary
         edu_info = ''
         skills_info = ''
         for sec in other_sections:
@@ -603,7 +621,6 @@ def build_template3(data):
         for sec in other_sections:
             upper = sec['title'].upper()
             if 'SKILL' in upper and sec['entries']:
-                # Get languages
                 for e in sec['entries']:
                     if 'language' in e['header_left'].lower():
                         skills_info = e.get('sub', '')[:80]
@@ -726,7 +743,7 @@ def build_template3(data):
             body += "  \\resumeItemListEnd\n\\resumeSubHeadingListEnd\n\n"
 
     return r"""%-------------------------
-% Resume in Latex
+% Resume in Latex - Template 3 (with Summary)
 %------------------------
 
 \documentclass[letterpaper,10pt]{article}
@@ -865,9 +882,9 @@ def generate_cover_letter_pdf(cover_letter_text):
 
 def generate_pdf(resume_text, template=1):
     """
-    template=1 → Template 1 (Charter) — NO SUMMARY
-    template=2 → Template 2 (Jake's Resume) — NO SUMMARY
-    template=3 → Template 3 (Jake's + Summary) — WITH SUMMARY
+    template=1 → Template 1 (NEW: Tighter Charter, no Summary)
+    template=2 → Template 2 (Jake's Resume, no Summary)
+    template=3 → Template 3 (Jake's + Summary)
     """
     data = parse_resume(resume_text)
     builders = {1: build_template1, 2: build_template2, 3: build_template3}
