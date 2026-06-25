@@ -195,11 +195,82 @@ def _t1_contact_line(contact_list):
 
 
 def _split_location_from_school(school_text):
-    """Split 'University Name, Location' into (name, location)."""
-    if ',' in school_text:
-        parts = school_text.rsplit(',', 1)
-        if len(parts) == 2 and len(parts[1].strip()) < 50:
-            return parts[0].strip(), parts[1].strip()
+    """
+    Split 'University Name, City, State/Country' into (name, location).
+
+    Handles:
+      'NYU, Tandon, New York, NY'            -> ('NYU, Tandon', 'New York, NY')
+      'Sathyabama Inst of Tech, Chennai, India' -> ('Sathyabama Inst of Tech', 'Chennai, India')
+      'NYU, Brooklyn, NY'                    -> ('NYU', 'Brooklyn, NY')
+      'Sathyabama, Chennai'                  -> ('Sathyabama', 'Chennai')
+      'MIT'                                  -> ('MIT', '')
+    """
+    # Common cities (lowercase for matching)
+    COMMON_CITIES = {
+        'chennai', 'mumbai', 'delhi', 'bangalore', 'hyderabad', 'pune', 'kolkata',
+        'new york', 'brooklyn', 'manhattan', 'boston', 'san francisco', 'los angeles',
+        'chicago', 'seattle', 'austin', 'london', 'paris', 'tokyo', 'beijing',
+        'shanghai', 'singapore', 'sydney', 'toronto', 'vancouver', 'berlin',
+        'berkeley', 'palo alto', 'cambridge', 'philadelphia', 'atlanta', 'dallas',
+        'houston', 'phoenix', 'denver', 'miami', 'detroit', 'baltimore',
+    }
+
+    COUNTRIES = {
+        'india', 'usa', 'united states', 'uk', 'united kingdom', 'canada',
+        'china', 'japan', 'germany', 'france', 'australia', 'singapore',
+        'mexico', 'brazil', 'spain', 'italy', 'netherlands', 'south korea',
+    }
+
+    if ',' not in school_text:
+        return school_text.strip(), ''
+
+    state_pattern = re.compile(r'^[A-Z]{2}$')
+    parts = [p.strip() for p in school_text.split(',')]
+
+    if len(parts) < 2:
+        return school_text.strip(), ''
+
+    last_lower = parts[-1].lower()
+    second_last_lower = parts[-2].lower() if len(parts) >= 2 else ''
+
+    is_last_state = bool(state_pattern.match(parts[-1]))
+    is_last_country = last_lower in COUNTRIES
+    is_second_last_city = second_last_lower in COMMON_CITIES
+
+    # CASE 1: Last 2 parts are "City, State" or "City, Country" (known city + state/country)
+    if (is_last_state or is_last_country) and len(parts) >= 3 and is_second_last_city:
+        location = f"{parts[-2]}, {parts[-1]}"
+        school = ', '.join(parts[:-2])
+        return school.strip(), location.strip()
+
+    # CASE 2: Last part alone is state code (NY, CA) — combine with second-to-last
+    if is_last_state and len(parts) >= 3:
+        location = f"{parts[-2]}, {parts[-1]}"
+        school = ', '.join(parts[:-2])
+        return school.strip(), location.strip()
+    elif is_last_state and len(parts) == 2:
+        return parts[0].strip(), parts[1].strip()
+
+    # CASE 3: Last part is a country — combine with second-to-last (city, country)
+    if is_last_country and len(parts) >= 3:
+        location = f"{parts[-2]}, {parts[-1]}"
+        school = ', '.join(parts[:-2])
+        return school.strip(), location.strip()
+    elif is_last_country and len(parts) == 2:
+        return parts[0].strip(), parts[1].strip()
+
+    # CASE 4: Last part is a known city alone
+    if last_lower in COMMON_CITIES:
+        return ', '.join(parts[:-1]).strip(), parts[-1].strip()
+
+    # CASE 5: Heuristic fallback — short last part that isn't a school word
+    school_keywords = ('university', 'school', 'institute', 'college', 'academy', 'tech', 'tandon')
+    last_part = parts[-1]
+    if (len(last_part) < 30 and
+        not any(kw in last_lower for kw in school_keywords)):
+        return ', '.join(parts[:-1]).strip(), last_part.strip()
+
+    # Default: no clear location → keep school as-is
     return school_text.strip(), ''
 
 
